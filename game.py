@@ -7,12 +7,13 @@ pygame.init()
 
 #Creating the window
 screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
-
+#FPS
 clock = pygame.time.Clock()
 
 #Loads images
 background = pygame.transform.scale(pygame.image.load("background.png").convert(), (WIN_WIDTH, WIN_HEIGHT))
 
+#Player information
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -82,6 +83,7 @@ class Player(pygame.sprite.Sprite):
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
 
+#Bullet information
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, angle):
         super().__init__()
@@ -111,13 +113,54 @@ class Bullet(pygame.sprite.Sprite):
     def update(self):
         self.bullet_movement()
 
-player = Player()
+#Enemy infomation
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, position):
+        super().__init__(enemy_group, all_sprites_group)
+        self.position = pygame.math.Vector2(position)
+        self.image = pygame.image.load("enemy.png").convert_alpha()
+        self.image = pygame.transform.rotozoom(self.image, 0, 0.1)
 
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+        self.direction = pygame.math.Vector2()
+        self.velocity = pygame.math.Vector2()
+        self.speed = 4
+
+    def hunt_player(self):
+        player_vector = pygame.math.Vector2(player.hitbox_rect.center)
+        enemy_vector = pygame.math.Vector2(self.rect.center)
+        distance = self.get_vector_distance(player_vector, enemy_vector)
+
+        if distance > 0:
+            self.direction = (player_vector - enemy_vector).normalize()
+        else:
+            self.direction = pygame.math.Vector2()
+        
+        self.velocity = self.direction * self.speed
+        self.position += self.velocity
+
+        self.rect.centerx = self.position.x
+        self.rect.centery = self.position.y
+
+    def get_vector_distance(self, vector_1, vector_2):
+        return(vector_1 - vector_2).magnitude()
+
+    def update(self):
+        self.hunt_player()
+
+
+#Sotring of sprites
 all_sprites_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
+enemy_group = pygame.sprite.Group()
+
+player = Player()
+enemy = Enemy((400,400))
 
 all_sprites_group.add(player)
 
+#Loop that runs the game
 while True:
     keys = pygame.key.get_pressed()
     for event in pygame.event.get():
