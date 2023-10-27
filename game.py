@@ -25,8 +25,8 @@ class Player(pygame.sprite.Sprite):
         self.speed = 8
         self.shoot = False
         self.shoot_cooldown = 0
+        self.health = 100
         
-
     def player_rotation(self):
         self.mouse_coords = pygame.mouse.get_pos()
         self.x_change_mouse_player = (self.mouse_coords[0] - self.hitbox_rect.centerx)
@@ -35,10 +35,20 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.base_player_image, -self.angle)
         self.rect = self.image.get_rect(center = self.hitbox_rect.center)
 
+    def player_hit(self):
+        hits = pygame.sprite.spritecollide(self, enemy_group, False)
+        if hits:
+            self.health = self.health - 1
+            if self.health <= 0:
+                self.kill()
+
+            print("hit")
+            print(self.health)
+            pygame.display.update()
+
     def user_input(self):
         self.velocity_x = 0
         self.velocity_y = 0
-
 
         keys = pygame.key.get_pressed()
 
@@ -56,7 +66,7 @@ class Player(pygame.sprite.Sprite):
             self.velocity_y /= math.sqrt(2)
         
         if pygame.mouse.get_pressed() == (1, 0, 0) or keys[pygame.K_SPACE]:
-            self.shooy = True
+            self.shoot = True
             self.is_shooting()
         else:
             self.shoot - False
@@ -111,10 +121,13 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
     
     def update(self):
+        hits = pygame.sprite.spritecollide(self, enemy_group, False)
+        if hits and player.shoot == True:
+            self.kill()
         self.bullet_movement()
 
 #Enemy infomation
-class Enemy(pygame.sprite.Sprite):
+class Enemy1(pygame.sprite.Sprite):
     def __init__(self, position):
         super().__init__(enemy_group, all_sprites_group)
         self.position = pygame.math.Vector2(position)
@@ -126,6 +139,7 @@ class Enemy(pygame.sprite.Sprite):
         self.direction = pygame.math.Vector2()
         self.velocity = pygame.math.Vector2()
         self.speed = 4
+        self.health = 3
 
     def hunt_player(self):
         player_vector = pygame.math.Vector2(player.hitbox_rect.center)
@@ -147,8 +161,75 @@ class Enemy(pygame.sprite.Sprite):
         return(vector_1 - vector_2).magnitude()
 
     def update(self):
+        hits = pygame.sprite.spritecollide(self, bullet_group, False)
+        if hits and player.shoot == True:
+            self.health -= 1
+            if self.health <= 0:
+                self.kill()
+                print("Enemy killed")
+        elif hits and player.shoot == False:
+            player.player_hit()
+
         self.hunt_player()
 
+class Enemy2(pygame.sprite.Sprite):
+    def __init__(self, position):
+        super().__init__(enemy_group, all_sprites_group)
+        self.position = pygame.math.Vector2(position)
+        self.image = pygame.image.load("enemy.png").convert_alpha()
+        self.image = pygame.transform.rotozoom(self.image, 0, 0.1)
+
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+        self.direction = pygame.math.Vector2()
+        self.velocity = pygame.math.Vector2()
+        self.speed = 4
+        self.health = 3
+
+    def hunt_player(self):
+        player_vector = pygame.math.Vector2(player.hitbox_rect.center)
+        enemy_vector = pygame.math.Vector2(self.rect.center)
+        distance = self.get_vector_distance(player_vector, enemy_vector)
+
+        if distance > 0:
+            self.direction = (player_vector - enemy_vector).normalize()
+        else:
+            self.direction = pygame.math.Vector2()
+        
+        self.velocity = self.direction * self.speed
+        self.position += self.velocity
+
+        self.rect.centerx = self.position.x
+        self.rect.centery = self.position.y
+
+    def get_vector_distance(self, vector_1, vector_2):
+        return(vector_1 - vector_2).magnitude()
+
+    def update(self):
+        hits = pygame.sprite.spritecollide(self, bullet_group, False)
+        if hits and player.shoot == True:
+            self.health -= 1
+            if self.health <= 0:
+                self.kill()
+                print("Enemy killed")
+        elif hits and player.shoot == False:
+            player.player_hit()
+
+        #Doesn't work fully, trying smth
+        # collision_tolerance = 10
+        # collide = pygame.sprite.spritecollide(self, enemy_group, False)
+        # if collide:
+        #     if abs(enemy2.rect.top - self.rect.bottom) < collision_tolerance > 0:
+        #         self.speed *= -1
+        #     if abs(enemy2.rect.bottom - self.rect.top) < collision_tolerance < 0:
+        #         self.speed *= -1
+        #     if abs(enemy2.rect.right - self.rect.left) < collision_tolerance < 0:
+        #         self.speed *= -1
+        #     if abs(enemy2.rect.left - self.rect.right) < collision_tolerance > 0:
+        #         self.speed *= -1
+
+
+        self.hunt_player()
 
 #Sotring of sprites
 all_sprites_group = pygame.sprite.Group()
@@ -156,9 +237,15 @@ bullet_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 
 player = Player()
-enemy = Enemy((400,400))
+enemy1 = Enemy1((400,400))
+enemy2 = Enemy2((600,600))
 
 all_sprites_group.add(player)
+all_sprites_group.add(enemy1)
+enemy_group.add(enemy1)
+
+all_sprites_group.add(enemy2)
+enemy_group.add(enemy2)
 
 #Loop that runs the game
 while True:
