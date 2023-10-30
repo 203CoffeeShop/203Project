@@ -214,20 +214,26 @@ class Enemy2(pygame.sprite.Sprite):
                 print("Enemy killed")
         elif hits and player.shoot == False:
             player.player_hit()
-
         #Doesn't work fully, trying smth
-        # collision_tolerance = 10
-        # collide = pygame.sprite.spritecollide(self, enemy_group, False)
-        # if collide:
-        #     if abs(enemy2.rect.top - self.rect.bottom) < collision_tolerance > 0:
-        #         self.speed *= -1
-        #     if abs(enemy2.rect.bottom - self.rect.top) < collision_tolerance < 0:
-        #         self.speed *= -1
-        #     if abs(enemy2.rect.right - self.rect.left) < collision_tolerance < 0:
-        #         self.speed *= -1
-        #     if abs(enemy2.rect.left - self.rect.right) < collision_tolerance > 0:
-        #         self.speed *= -1
-
+        collision_tolerance = 10
+        collide = self.rect.colliderect(enemy1.rect)
+        if collide:
+            if enemy2!=self:
+                # if abs(enemy2.rect.top - self.rect.bottom) < collision_tolerance > 0:
+                #     self.rect.centery *= -1
+                # if abs(enemy2.rect.bottom - self.rect.top) < collision_tolerance < 0:
+                #     self.rect.centery *= -1
+                # if abs(enemy2.rect.right - self.rect.left) < collision_tolerance < 0:
+                #     self.rect.centerx *= -1
+                # if abs(enemy2.rect.left - self.rect.right) < collision_tolerance > 0:
+                #     self.rect.centerx *= -1
+                if abs(enemy2.rect.bottom > enemy1.rect.top):
+                    
+                    enemy2.rect.bottom -= collision_tolerance
+                if abs(enemy2.rect.top < enemy1.rect.bottom):
+                    
+                    enemy2.rect.top += collision_tolerance
+            print("hit")
 
         self.hunt_player()
 
@@ -252,6 +258,9 @@ while True:
     keys = pygame.key.get_pressed()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+        if keys[pygame.K_q]:
             pygame.quit()
             exit()
     screen.blit(background, (0,0))
